@@ -13,7 +13,21 @@ public class PlayerBehaviour : MonoBehaviour
     public Camera cam;
 
     public gun gun;
-    
+
+
+
+    public float coolDown = 5;
+    private float cooldownTimer;
+
+    public int maxAmmo = 10;
+    private int currentAmmo;
+    public float reloadTime = 1f;
+    private bool isReloading = false;
+
+    public Transform firePoint;
+    public GameObject bulletPrefab;
+
+    public float bulletForce = 0.1f;
 
 
     // Start is called before the first frame update
@@ -22,7 +36,9 @@ public class PlayerBehaviour : MonoBehaviour
         rb = GetComponent<Rigidbody>();
       
         cam = FindObjectOfType<Camera>();
- 
+
+
+        currentAmmo = maxAmmo;
     }
 
     
@@ -51,20 +67,31 @@ public class PlayerBehaviour : MonoBehaviour
             transform.LookAt(new Vector3(pointToLook.x, transform.position.y, pointToLook.z));
         }
 
+        if (isReloading)
+            return;
+
+        if(currentAmmo <= 0)
+        {
+            StartCoroutine(Reload());
+            return;
+        }
+
+
         //fires a bullet when the right mouse button is clicked
-        if (Input.GetMouseButtonDown(0))
-        {
-            gun.isFiring = true;
-        }
+        if (Input.GetKeyDown(KeyCode.Mouse0))
+            {
+                Shoot();
+                currentAmmo--;
+            }
 
-     
-        if (Input.GetMouseButtonUp(0))
-        {
-            gun.isFiring = false;
-        }
+       
+    }
 
-
-
+    void Shoot()
+    {
+        GameObject bullet = Instantiate(bulletPrefab, firePoint.position,firePoint.rotation);
+        Rigidbody rb = bullet.GetComponent<Rigidbody>();
+        rb.AddForce(firePoint.up * bulletForce, ForceMode.Impulse);
     }
 
     void FixedUpdate()
@@ -76,21 +103,18 @@ public class PlayerBehaviour : MonoBehaviour
         
     }
 
-    //Die and Win
-    private void OnCollisionEnter(Collision collision)
+
+    IEnumerator Reload()
     {
-        if(collision.transform.tag == "Die")
-        {
-            GameManager.gameOver = true;
-        }
+        isReloading = true;
         
-        else if (collision.transform.tag == "Win")
-        {
-            GameManager.WinLevel = true;
-        }
+
+        yield return new WaitForSeconds(reloadTime);
+
+        currentAmmo = maxAmmo;
+        isReloading = false;
     }
 
-    
 
-    
+
 }
